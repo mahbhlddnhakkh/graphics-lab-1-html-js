@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Почти фотошоп</title>
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="icon" type="image/png" href="./assets/photoshopchan-nobg.png">
+  </head>
+  <body>
+    <div id="logo-div">
+      <img id="logo" src="./assets/photoshopchan-nobg.png" alt="photoshopchan-nobg" title="Нажмите, чтобы скрыть :(">
+    </div>
+    <table class="main-table" id="main-table">
+      <tr>
+        <td>
+          <table id="save-table" style="display: none;">
+            <tr>
+              <td>
+                <button type="button" id="save-button" onclick="OnSaveButtonClick();">Сохранить</button>
+              </td>
+              <td>
+                <button type="button" id="reset-button" onclick="OnResetButtonClick();" disabled>Сбросить</button>
+              </td>
+              <!--<td>
+                <button type="button" id="reset-button-with-offset" onclick="OnResetButtonClick();" disabled>Сбросить с оффсетом</button>
+              </td>-->
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <table id="history-table" style="display: none;">
+            <tr>
+              <td>
+                <button type="button" class="symbol-uni-text" id="history-prev-button" onclick="OnHistoryPrevButtonClick();" disabled>&#8592</button>
+              </td>
+              <td>
+                <button type="button" id="history-reset-button" onclick="OnHistoryResetButtonClick();">Очистить историю</button>
+              </td>
+              <td>
+                <button type="button" class="symbol-uni-text" id="history-next-button" onclick="OnHistoryNextButtonClick();" disabled>&#8594</button>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <input type="file" id="image-input" accept="image/*" disabled>
+          <!--<button type="button" id="upload-button" onclick="OnUploadButtonClick();">Загрузить</button>-->
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <table id="images-table" style="display: none;">
+            <tr>
+              <td>
+                <canvas class="img-canvas" id="original-img-canvas" width="0" height="0"></canvas>
+                <br>Оригинальное изображение
+              </td>
+              <td>
+                &nbsp &nbsp &nbsp
+              </td>
+              <td>
+                <canvas class="img-canvas"  id="edited-img-canvas" width="0" height="0" ></canvas>
+                <br>Изменённое изображение
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <table id="offset-table" style="display: none;">
+            <tr>
+              <td>
+                Оффсет:<br>(прямоугольник от левого верхнего угла к правому нижнему)
+              </td>
+              <td>
+                x <input type="number" class="offset-input" id="offset-input-x">
+              </td>
+              <td>
+                y <input type="number" class="offset-input" id="offset-input-y">
+              </td>
+              <td>
+                w <input type="number" class="offset-input" id="offset-input-w">
+              </td>
+              <td>
+                h <input type="number" class="offset-input" id="offset-input-h">
+              </td>
+              <td>
+                <button type="button" id="offset-reset-button" onclick="ResetOffset();">Сбросить</button>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <select id="select-filter" style="display: none;" onchange="if (this.selectedIndex) OnSelectFilter();">
+            <option value disabled selected>Выберите преобразование</option>
+            <!--<option value="test">test</option>-->
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <table id="filter-options-table">
+            
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <button type="button" id="apply-filter-button" onclick="OnApplyFilterButtonClick();" style="display: none;">Применить фильтр</button>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <button type="button" id="histogram-button" style="display: none;"></button>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <table id="histograms-table">
+            <tr>
+              <td>
+                Оригинальное изображение
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <table id="histogram-original-table">
+                  <tr>
+                    <td>
+                      <canvas class="histogram-canvas" id="histogram-canvas-original-r" width="1" height="1"></canvas>
+                    </td>
+                    <td>
+                      <canvas class="histogram-canvas" id="histogram-canvas-original-g" width="1" height="1"></canvas>
+                    </td>
+                    <td>
+                      <canvas class="histogram-canvas" id="histogram-canvas-original-b" width="1" height="1"></canvas>
+                    </td>
+                    <td>
+                      <canvas class="histogram-canvas" id="histogram-canvas-original-hsl" width="1" height="1"></canvas>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                Изменённое изображение
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <table id="histogram-edited-table">
+                  <tr>
+                    <td>
+                      <canvas class="histogram-canvas" id="histogram-canvas-edited-r" width="1" height="1"></canvas>
+                    </td>
+                    <td>
+                      <canvas class="histogram-canvas" id="histogram-canvas-edited-g" width="1" height="1"></canvas>
+                    </td>
+                    <td>
+                      <canvas class="histogram-canvas" id="histogram-canvas-edited-b" width="1" height="1"></canvas>
+                    </td>
+                    <td>
+                      <canvas class="histogram-canvas" id="histogram-canvas-edited-hsl" width="1" height="1"></canvas>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span id="error-message" onclick="this.style.display = 'none';" style="display: none;">Error</span>
+        </td>
+      </tr>
+    </table>
+    <div id="filter-progress-bar-div" style="display: none;">
+      <progress id="filter-progress-bar" max="100" value="0"></progress>
+      <br>
+      <span id="filter-progress-bar-text"></span>
+    </div>
+	<!--<script src="./js/index.js"></script>-->
+  <!-- JS doesn't support modules without a server. Too bad! -->
+  <script src="./compiled.js"></script>
+  </body>
+</html>
