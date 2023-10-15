@@ -142,13 +142,13 @@ def AdvancedReplace(line, replace_from, replace_to):
 
 
 def LogError(msg):
-  DoLog("ERROR", msg)
+  DoLog("ERRO", msg)
 
 def LogInfo(msg):
   DoLog("INFO", msg)
 
 def LogWarning(msg):
-  DoLog("WARNING", msg)
+  DoLog("WARN", msg)
 
 def DoLog(type, msg):
   print("[" + type + "] " + msg)

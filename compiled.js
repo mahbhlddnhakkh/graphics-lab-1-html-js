@@ -113,7 +113,7 @@
 /*107*/ 
 /*108*/ function Clamp(value, min, max) {
 /*109*/   if (value <= min)
-/*110*/     return value;
+/*110*/     return min;
 /*111*/   if (value >= max)
 /*112*/     return max;
 /*113*/   return value;
@@ -1300,14 +1300,14 @@
 /*418*/   let k = Number(arg["k"]["val"]);
 /*419*/   ApplyPerPixelFilter(canvas, data, function (r, g, b, a) {
 /*420*/     let intens = 0.36 * r + 0.53 * g + 0.11 * b;
-/*421*/     return [intens + 2 * k, intens + 0.5 * k, intens - k, a];
+/*421*/     return [Clamp(intens + 2 * k, 0, 255), Clamp(intens + 0.5 * k, 0, 255), Clamp(intens - k, 0, 255), a];
 /*422*/   });
 /*423*/ }
 /*424*/ 
 /*425*/ function DoIncreaseBrightnessPerPixelFilter(/*Canvas*/ canvas, /*ImageData*/ data, /*Dict*/ arg) {
 /*426*/   let k = Number(arg["k"]["val"]);
 /*427*/   ApplyPerPixelFilter(canvas, data, function (r, g, b, a) {
-/*428*/     return [r + k, g + k, b + k, a];
+/*428*/     return [Clamp(r + k, 0, 255), Clamp(g + k, 0, 255), Clamp(b + k, 0, 255), a];
 /*429*/   });
 /*430*/ }
 /*431*/ 
@@ -1782,223 +1782,224 @@
 /*2*/ 
 /*3*/ 
 /*4*/ 
-/*5*/ let errorElement = document.getElementById("error-message");
+/*5*/ let errorElement;
 /*6*/ 
 /*7*/ window.addEventListener("load", (event) => {
-/*8*/   let symbols = document.getElementsByClassName("symbol-uni-text");
-/*9*/   for (let i = 0; i < symbols.length; i++) {
-/*10*/     symbols[i].style.fontSize = "1.25em";
-/*11*/   }
-/*12*/   document.getElementById("image-input").disabled = false;
-/*13*/   FiltersInit();
-/*14*/   HideHistogramCanvas();
-/*15*/ });
-/*16*/ 
-/*17*/ function ResetOffset() {
-/*18*/   let canvas = document.getElementById("edited-img-canvas");
-/*19*/   document.getElementById("offset-input-x").value = "0";
-/*20*/   document.getElementById("offset-input-y").value = "0";
-/*21*/   document.getElementById("offset-input-w").value = canvas.width.toString();
-/*22*/   document.getElementById("offset-input-h").value = canvas.height.toString();
-/*23*/ }
-/*24*/ 
-/*25*/ function ShowWhenImgUpload() {
-/*26*/   document.getElementById("select-filter").style.display = "inline-block";
-/*27*/   document.getElementById("images-table").style.display = "inline-block";
-/*28*/   document.getElementById("save-table").style.display = "inline-block";
-/*29*/   document.getElementById("offset-table").style.display = "inline-block";
-/*30*/   document.getElementById("history-table").style.display = "inline-block";
-/*31*/   document.getElementById("histogram-button").style.display = "inline-block";
-/*32*/ }
-/*33*/ 
-/*34*/ function OnSaveButtonClick() {
-/*35*/   // Save image.
-/*36*/   //document.getElementById("save-button").href=document.getElementById("edited-img-canvas").toDataURL("image/png"); // Doesn't work.
-/*37*/   let link = document.createElement('a');
-/*38*/   link.download = "image.png";
-/*39*/   link.href = document.getElementById("edited-img-canvas").toDataURL();
-/*40*/   link.click();
-/*41*/   link.remove();
-/*42*/   link = null;
-/*43*/ }
-/*44*/ 
-/*45*/ function OnResetButtonClick() {
-/*46*/   document.getElementById("reset-button").disabled = true;
-/*47*/   document.getElementById("history-prev-button").disabled = false;
-/*48*/   document.getElementById("history-next-button").disabled = true;
-/*49*/   //history.DeleteAfterCurrent();
-/*50*/   let canvas = document.getElementById("edited-img-canvas");
-/*51*/   let ctx = canvas.getContext("2d");
-/*52*/   ctx.drawImage(document.getElementById("original-img-canvas"), 0, 0);
-/*53*/   DirtHistogram();
-/*54*/   //HistoryAdd(ctx.getImageData(0, 0, canvas.width, canvas.height));
-/*55*/ }
-/*56*/ 
-/*57*/ function OnHistoryPrevButtonClick() {
-/*58*/   if (!document.getElementById("reset-button").disabled) {
-/*59*/     history.Prev();
-/*60*/   }
-/*61*/   else {
-/*62*/     document.getElementById("reset-button").disabled = false;
-/*63*/   }
-/*64*/   HistoryUpdate();
-/*65*/ }
-/*66*/ 
-/*67*/ function OnHistoryNextButtonClick() {
-/*68*/   history.Next();
-/*69*/   HistoryUpdate();
-/*70*/ }
-/*71*/ 
-/*72*/ function OnHistoryResetButtonClick() {
-/*73*/   history.DeleteAll();
-/*74*/   document.getElementById("history-prev-button").disabled = true;
-/*75*/   document.getElementById("history-next-button").disabled = true;
-/*76*/   let canvas = document.getElementById("edited-img-canvas");
-/*77*/   let ctx = canvas.getContext("2d");
-/*78*/   HistoryAdd(ctx.getImageData(0, 0, canvas.width, canvas.height));
-/*79*/   HistoryLog();
-/*80*/ }
-/*81*/ 
-/*82*/ function HistoryReset() {
-/*83*/   history.DeleteAll();
-/*84*/   document.getElementById("history-prev-button").disabled = true;
-/*85*/   document.getElementById("history-next-button").disabled = true;
-/*86*/ }
-/*87*/ 
-/*88*/ function OnSelectFilter() {
-/*89*/   let filterOptionsTable = document.getElementById("filter-options-table");
-/*90*/   let selectFilter = document.getElementById("select-filter");
-/*91*/   if (selectFilter.selectedIndex === 0)
-/*92*/     return;
-/*93*/   let filterOption = selectFilter.options[selectFilter.selectedIndex].value;
-/*94*/   while (filterOptionsTable.firstChild) {
-/*95*/     filterOptionsTable.firstChild.remove();
-/*96*/   }
-/*97*/   //filtersDict[filterOption]["argsHTML"] = {};
-/*98*/   Object.keys(filtersDict[filterOption]["args"]).forEach(function (key) {
-/*99*/     let container = filterOptionsTable.appendChild(document.createElement("tr"));
-/*100*/     let label_e = container.appendChild(document.createElement("td"));
-/*101*/     if (filtersDict[filterOption]["args"][key] == null) {
-/*102*/       label_e.innerHTML = key;
-/*103*/       container.appendChild(document.createElement("td"));
-/*104*/       return;
-/*105*/     }
-/*106*/     label_e.innerHTML = filtersDict[filterOption]["args"][key]["label"];
-/*107*/     let e = container.appendChild(document.createElement("td")).appendChild(document.createElement(filtersDict[filterOption]["args"][key]["type"].split(" ")[0]));
-/*108*/     filtersDict[filterOption]["args"][key]["html"] = e;
-/*109*/     e.classList.add("filter-option-created");
-/*110*/ 
-/*111*/     if (e.tagName.toLowerCase() == "select") {
-/*112*/       for (let i = 0; i < filtersDict[filterOption]["args"][key]["values"].length; i++) {
-/*113*/         let opt = e.appendChild(document.createElement("option"));
-/*114*/         opt.value = filtersDict[filterOption]["args"][key]["values"][i];
-/*115*/         opt.innerHTML = filtersDict[filterOption]["args"][key]["values"][i];
-/*116*/       }
-/*117*/       e.selectedIndex = 0;
-/*118*/     }
-/*119*/     else if (e.tagName.toLowerCase() == "input") {
-/*120*/       e.type = filtersDict[filterOption]["args"][key]["input-type"];
-/*121*/       e.value = filtersDict[filterOption]["args"][key]["value"];
-/*122*/     }
-/*123*/     else if (e.tagName.toLowerCase() == "textarea") {
-/*124*/       e.placeholder = filtersDict[filterOption]["args"][key]["placeholder"];
-/*125*/       e.value = filtersDict[filterOption]["args"][key]["value"];
-/*126*/     }
-/*127*/     else if (e.tagName.toLowerCase() == "checkbox") {
-/*128*/       e.type = filtersDict[filterOption]["args"][key]["input-type"];
-/*129*/       e.checked = filtersDict[filterOption]["args"][key]["checked"];
-/*130*/     }
-/*131*/   });
-/*132*/   document.getElementById("apply-filter-button").style.display = "inline-block";
-/*133*/ }
-/*134*/ 
-/*135*/ function OnApplyFilterButtonClick() {
+/*8*/ 	errorElement = document.getElementById("error-message");
+/*9*/ 	document.getElementById("image-input").addEventListener("change", function (e) {
+/*10*/ 		// https://stackoverflow.com/questions/10906734/how-to-upload-image-into-html5-canvas
+/*11*/ 		if (!e.target.files) {
+/*12*/ 		  SendErrorMessage("Файл не найден.", true);
+/*13*/ 		}
+/*14*/ 		let reader = new FileReader();
+/*15*/ 		reader.readAsDataURL(e.target.files[0]);
+/*16*/ 		reader.onloadend = function (e) {
+/*17*/ 		  let img = new Image();
+/*18*/ 		  img.src = e.target.result;
+/*19*/ 		  img.onload = () => {
+/*20*/ 		    let canvases = [document.getElementById("original-img-canvas"), document.getElementById("edited-img-canvas")];
+/*21*/ 		    for (let i = 0; i < 2; i++) {
+/*22*/ 		      let ctx = canvases[i].getContext("2d");
+/*23*/ 		      canvases[i].width = img.width;
+/*24*/ 		      canvases[i].height = img.height;
+/*25*/ 		      ctx.drawImage(img, 0, 0);
+/*26*/ 		    }
+/*27*/ 		    OnHistoryResetButtonClick();
+/*28*/ 		    document.getElementById("reset-button").disabled = true;
+/*29*/ 
+/*30*/ 		    ResetOffset();
+/*31*/ 		    ShowWhenImgUpload();
+/*32*/ 		    OnSelectFilter();
+/*33*/ 		    DrawOriginalHistogramCanvas();
+/*34*/ 		  }
+/*35*/ 		}
+/*36*/ 	});
+/*37*/ 
+/*38*/ 	document.getElementById("histogram-button").onclick = () => {
+/*39*/ 		// https://javascript.info/popup-windows
+/*40*/ 		// or don't use popups??
+/*41*/ 		//let popup = window.open("about:blank", "Гистограмма", "width=1000,height=500");
+/*42*/ 		let canvas = document.getElementById("histograms-table");
+/*43*/ 		if (canvas.style.display == "none") {
+/*44*/ 		  ShowHistogramCanvas();
+/*45*/ 		}
+/*46*/ 		else {
+/*47*/ 		  HideHistogramCanvas();
+/*48*/ 		}
+/*49*/ 	};
+/*50*/ 
+/*51*/ 	document.getElementById("logo").onclick = () => {
+/*52*/ 		document.getElementById("logo").style.display = "none";
+/*53*/ 	}
+/*54*/ 		let symbols = document.getElementsByClassName("symbol-uni-text");
+/*55*/ 		for (let i = 0; i < symbols.length; i++) {
+/*56*/ 		  symbols[i].style.fontSize = "1.25em";
+/*57*/ 		}
+/*58*/ 		document.getElementById("image-input").disabled = false;
+/*59*/ 		FiltersInit();
+/*60*/ 		HideHistogramCanvas();
+/*61*/ });
+/*62*/ 
+/*63*/ function ResetOffset() {
+/*64*/   let canvas = document.getElementById("edited-img-canvas");
+/*65*/   document.getElementById("offset-input-x").value = "0";
+/*66*/   document.getElementById("offset-input-y").value = "0";
+/*67*/   document.getElementById("offset-input-w").value = canvas.width.toString();
+/*68*/   document.getElementById("offset-input-h").value = canvas.height.toString();
+/*69*/ }
+/*70*/ 
+/*71*/ function ShowWhenImgUpload() {
+/*72*/   document.getElementById("select-filter").style.display = "inline-block";
+/*73*/   document.getElementById("images-table").style.display = "inline-block";
+/*74*/   document.getElementById("save-table").style.display = "inline-block";
+/*75*/   document.getElementById("offset-table").style.display = "inline-block";
+/*76*/   document.getElementById("history-table").style.display = "inline-block";
+/*77*/   document.getElementById("histogram-button").style.display = "inline-block";
+/*78*/ }
+/*79*/ 
+/*80*/ function OnSaveButtonClick() {
+/*81*/   // Save image.
+/*82*/   //document.getElementById("save-button").href=document.getElementById("edited-img-canvas").toDataURL("image/png"); // Doesn't work.
+/*83*/   let link = document.createElement('a');
+/*84*/   link.download = "image.png";
+/*85*/   link.href = document.getElementById("edited-img-canvas").toDataURL();
+/*86*/   link.click();
+/*87*/   link.remove();
+/*88*/   link = null;
+/*89*/ }
+/*90*/ 
+/*91*/ function OnResetButtonClick() {
+/*92*/   document.getElementById("reset-button").disabled = true;
+/*93*/   document.getElementById("history-prev-button").disabled = false;
+/*94*/   document.getElementById("history-next-button").disabled = true;
+/*95*/   //history.DeleteAfterCurrent();
+/*96*/   let canvas = document.getElementById("edited-img-canvas");
+/*97*/   let ctx = canvas.getContext("2d");
+/*98*/   ctx.drawImage(document.getElementById("original-img-canvas"), 0, 0);
+/*99*/   DirtHistogram();
+/*100*/   //HistoryAdd(ctx.getImageData(0, 0, canvas.width, canvas.height));
+/*101*/ }
+/*102*/ 
+/*103*/ function OnHistoryPrevButtonClick() {
+/*104*/   if (!document.getElementById("reset-button").disabled) {
+/*105*/     history.Prev();
+/*106*/   }
+/*107*/   else {
+/*108*/     document.getElementById("reset-button").disabled = false;
+/*109*/   }
+/*110*/   HistoryUpdate();
+/*111*/ }
+/*112*/ 
+/*113*/ function OnHistoryNextButtonClick() {
+/*114*/   history.Next();
+/*115*/   HistoryUpdate();
+/*116*/ }
+/*117*/ 
+/*118*/ function OnHistoryResetButtonClick() {
+/*119*/   history.DeleteAll();
+/*120*/   document.getElementById("history-prev-button").disabled = true;
+/*121*/   document.getElementById("history-next-button").disabled = true;
+/*122*/   let canvas = document.getElementById("edited-img-canvas");
+/*123*/   let ctx = canvas.getContext("2d");
+/*124*/   HistoryAdd(ctx.getImageData(0, 0, canvas.width, canvas.height));
+/*125*/   HistoryLog();
+/*126*/ }
+/*127*/ 
+/*128*/ function HistoryReset() {
+/*129*/   history.DeleteAll();
+/*130*/   document.getElementById("history-prev-button").disabled = true;
+/*131*/   document.getElementById("history-next-button").disabled = true;
+/*132*/ }
+/*133*/ 
+/*134*/ function OnSelectFilter() {
+/*135*/   let filterOptionsTable = document.getElementById("filter-options-table");
 /*136*/   let selectFilter = document.getElementById("select-filter");
-/*137*/   let filterOption = selectFilter.options[selectFilter.selectedIndex].value;
-/*138*/   if (filtersDict[filterOption] === null) {
-/*139*/     SendErrorMessage("Как вы выбрали это? У вас не должна была быть возможность сделать это.", true);
-/*140*/   }
-/*141*/   let argsForLog = "";
-/*142*/   Object.keys(filtersDict[filterOption]["args"]).forEach(function (key) {
-/*143*/     if (filtersDict[filterOption]["args"][key] == null)
-/*144*/       return;
-/*145*/     let e = filtersDict[filterOption]["args"][key]["html"];
-/*146*/     if (e.tagName.toLowerCase() == "select") {
-/*147*/       //if (filtersDict[filterOption]["args"][key]["input-type"]) {
-/*148*/       //  filtersDict[filterOption]["args"][key]["val"] = e.options[e.selectedIndex].checked;
-/*149*/       //}
-/*150*/       //else {
-/*151*/       //filtersDict[filterOption]["args"][key]["val"] = e.options[e.selectedIndex].value;
-/*152*/       //}
-/*153*/       filtersDict[filterOption]["args"][key]["val"] = e.selectedIndex;
-/*154*/     }
-/*155*/     else if (e.tagName.toLowerCase() == "input" || e.tagName.toLowerCase() == "textarea") {
-/*156*/       filtersDict[filterOption]["args"][key]["val"] = e.value;
-/*157*/     }
-/*158*/     else if (e.tagName.toLowerCase() == "checkbox") {
-/*159*/       filtersDict[filterOption]["args"][key]["val"] = e.checked;
-/*160*/     }
-/*161*/     let tmpForLog = filtersDict[filterOption]["args"][key]["val"];
-/*162*/     if (typeof tmpForLog !== 'string') {
-/*163*/       tmpForLog = tmpForLog.toString();
+/*137*/   if (selectFilter.selectedIndex === 0)
+/*138*/     return;
+/*139*/   let filterOption = selectFilter.options[selectFilter.selectedIndex].value;
+/*140*/   while (filterOptionsTable.firstChild) {
+/*141*/     filterOptionsTable.firstChild.remove();
+/*142*/   }
+/*143*/   //filtersDict[filterOption]["argsHTML"] = {};
+/*144*/   Object.keys(filtersDict[filterOption]["args"]).forEach(function (key) {
+/*145*/     let container = filterOptionsTable.appendChild(document.createElement("tr"));
+/*146*/     let label_e = container.appendChild(document.createElement("td"));
+/*147*/     if (filtersDict[filterOption]["args"][key] == null) {
+/*148*/       label_e.innerHTML = key;
+/*149*/       container.appendChild(document.createElement("td"));
+/*150*/       return;
+/*151*/     }
+/*152*/     label_e.innerHTML = filtersDict[filterOption]["args"][key]["label"];
+/*153*/     let e = container.appendChild(document.createElement("td")).appendChild(document.createElement(filtersDict[filterOption]["args"][key]["type"].split(" ")[0]));
+/*154*/     filtersDict[filterOption]["args"][key]["html"] = e;
+/*155*/     e.classList.add("filter-option-created");
+/*156*/ 
+/*157*/     if (e.tagName.toLowerCase() == "select") {
+/*158*/       for (let i = 0; i < filtersDict[filterOption]["args"][key]["values"].length; i++) {
+/*159*/         let opt = e.appendChild(document.createElement("option"));
+/*160*/         opt.value = filtersDict[filterOption]["args"][key]["values"][i];
+/*161*/         opt.innerHTML = filtersDict[filterOption]["args"][key]["values"][i];
+/*162*/       }
+/*163*/       e.selectedIndex = 0;
 /*164*/     }
-/*165*/     argsForLog += key + '=' + tmpForLog + '\n';
-/*166*/   });
-/*167*/   if (argsForLog === "") {
-/*168*/     argsForLog = "null";
-/*169*/   }
-/*170*/   let canvas = document.getElementById("edited-img-canvas");
-/*171*/   let ctx = canvas.getContext("2d");
-/*172*/   let [x, y, w, h] = GetOffsetFromElement(canvas);
-/*173*/   if (document.getElementById("reset-button").disabled && history.count > 1) {
-/*174*/     HistoryAdd(ctx.getImageData(0, 0, canvas.width, canvas.height));
-/*175*/   }
-/*176*/   console.info("Применяем фильтр " + filterOption + " с оффсетами x=" + x.toString() + " y=" + y.toString() + " w=" + w.toString() + " h=" + h.toString() + " с аргументами:\n" + argsForLog);
-/*177*/   filtersDict[filterOption]["func"](canvas, ctx.getImageData(x, y, w, h), filtersDict[filterOption]["args"]);
-/*178*/ }
-/*179*/ 
-/*180*/ document.getElementById("image-input").addEventListener("change", function (e) {
-/*181*/   // https://stackoverflow.com/questions/10906734/how-to-upload-image-into-html5-canvas
-/*182*/   if (!e.target.files) {
-/*183*/     SendErrorMessage("Файл не найден.", true);
-/*184*/   }
-/*185*/   let reader = new FileReader();
-/*186*/   reader.readAsDataURL(e.target.files[0]);
-/*187*/   reader.onloadend = function (e) {
-/*188*/     let img = new Image();
-/*189*/     img.src = e.target.result;
-/*190*/     img.onload = () => {
-/*191*/       let canvases = [document.getElementById("original-img-canvas"), document.getElementById("edited-img-canvas")];
-/*192*/       for (let i = 0; i < 2; i++) {
-/*193*/         let ctx = canvases[i].getContext("2d");
-/*194*/         canvases[i].width = img.width;
-/*195*/         canvases[i].height = img.height;
-/*196*/         ctx.drawImage(img, 0, 0);
-/*197*/       }
-/*198*/       OnHistoryResetButtonClick();
-/*199*/       document.getElementById("reset-button").disabled = true;
-/*200*/ 
-/*201*/       ResetOffset();
-/*202*/       ShowWhenImgUpload();
-/*203*/       OnSelectFilter();
-/*204*/       DrawOriginalHistogramCanvas();
-/*205*/     }
-/*206*/   }
-/*207*/ });
-/*208*/ 
-/*209*/ document.getElementById("histogram-button").onclick = () => {
-/*210*/   // https://javascript.info/popup-windows
-/*211*/   // or don't use popups??
-/*212*/   //let popup = window.open("about:blank", "Гистограмма", "width=1000,height=500");
-/*213*/   let canvas = document.getElementById("histograms-table");
-/*214*/   if (canvas.style.display == "none") {
-/*215*/     ShowHistogramCanvas();
-/*216*/   }
-/*217*/   else {
-/*218*/     HideHistogramCanvas();
-/*219*/   }
-/*220*/ };
-/*221*/ 
-/*222*/ document.getElementById("logo").onclick = () => {
-/*223*/   document.getElementById("logo").style.display = "none";
+/*165*/     else if (e.tagName.toLowerCase() == "input") {
+/*166*/       e.type = filtersDict[filterOption]["args"][key]["input-type"];
+/*167*/       e.value = filtersDict[filterOption]["args"][key]["value"];
+/*168*/     }
+/*169*/     else if (e.tagName.toLowerCase() == "textarea") {
+/*170*/       e.placeholder = filtersDict[filterOption]["args"][key]["placeholder"];
+/*171*/       e.value = filtersDict[filterOption]["args"][key]["value"];
+/*172*/     }
+/*173*/     else if (e.tagName.toLowerCase() == "checkbox") {
+/*174*/       e.type = filtersDict[filterOption]["args"][key]["input-type"];
+/*175*/       e.checked = filtersDict[filterOption]["args"][key]["checked"];
+/*176*/     }
+/*177*/   });
+/*178*/   document.getElementById("apply-filter-button").style.display = "inline-block";
+/*179*/ }
+/*180*/ 
+/*181*/ function OnApplyFilterButtonClick() {
+/*182*/   let selectFilter = document.getElementById("select-filter");
+/*183*/   let filterOption = selectFilter.options[selectFilter.selectedIndex].value;
+/*184*/   if (filtersDict[filterOption] === null) {
+/*185*/     SendErrorMessage("Как вы выбрали это? У вас не должна была быть возможность сделать это.", true);
+/*186*/   }
+/*187*/   let argsForLog = "";
+/*188*/   Object.keys(filtersDict[filterOption]["args"]).forEach(function (key) {
+/*189*/     if (filtersDict[filterOption]["args"][key] == null)
+/*190*/       return;
+/*191*/     let e = filtersDict[filterOption]["args"][key]["html"];
+/*192*/     if (e.tagName.toLowerCase() == "select") {
+/*193*/       //if (filtersDict[filterOption]["args"][key]["input-type"]) {
+/*194*/       //  filtersDict[filterOption]["args"][key]["val"] = e.options[e.selectedIndex].checked;
+/*195*/       //}
+/*196*/       //else {
+/*197*/       //filtersDict[filterOption]["args"][key]["val"] = e.options[e.selectedIndex].value;
+/*198*/       //}
+/*199*/       filtersDict[filterOption]["args"][key]["val"] = e.selectedIndex;
+/*200*/     }
+/*201*/     else if (e.tagName.toLowerCase() == "input" || e.tagName.toLowerCase() == "textarea") {
+/*202*/       filtersDict[filterOption]["args"][key]["val"] = e.value;
+/*203*/     }
+/*204*/     else if (e.tagName.toLowerCase() == "checkbox") {
+/*205*/       filtersDict[filterOption]["args"][key]["val"] = e.checked;
+/*206*/     }
+/*207*/     let tmpForLog = filtersDict[filterOption]["args"][key]["val"];
+/*208*/     if (typeof tmpForLog !== 'string') {
+/*209*/       tmpForLog = tmpForLog.toString();
+/*210*/     }
+/*211*/     argsForLog += key + '=' + tmpForLog + '\n';
+/*212*/   });
+/*213*/   if (argsForLog === "") {
+/*214*/     argsForLog = "null";
+/*215*/   }
+/*216*/   let canvas = document.getElementById("edited-img-canvas");
+/*217*/   let ctx = canvas.getContext("2d");
+/*218*/   let [x, y, w, h] = GetOffsetFromElement(canvas);
+/*219*/   if (document.getElementById("reset-button").disabled && history.count > 1) {
+/*220*/     HistoryAdd(ctx.getImageData(0, 0, canvas.width, canvas.height));
+/*221*/   }
+/*222*/   console.info("Применяем фильтр " + filterOption + " с оффсетами x=" + x.toString() + " y=" + y.toString() + " w=" + w.toString() + " h=" + h.toString() + " с аргументами:\n" + argsForLog);
+/*223*/   filtersDict[filterOption]["func"](canvas, ctx.getImageData(x, y, w, h), filtersDict[filterOption]["args"]);
 /*224*/ }
+/*225*/ 

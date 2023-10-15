@@ -418,14 +418,14 @@ function DoSepiaFilter(/*Canvas*/ canvas, /*ImageData*/ data, /*Dict*/ arg) {
   let k = Number(arg["k"]["val"]);
   ApplyPerPixelFilter(canvas, data, function (r, g, b, a) {
     let intens = 0.36 * r + 0.53 * g + 0.11 * b;
-    return [intens + 2 * k, intens + 0.5 * k, intens - k, a];
+    return [Clamp(intens + 2 * k, 0, 255), Clamp(intens + 0.5 * k, 0, 255), Clamp(intens - k, 0, 255), a];
   });
 }
 
 function DoIncreaseBrightnessPerPixelFilter(/*Canvas*/ canvas, /*ImageData*/ data, /*Dict*/ arg) {
   let k = Number(arg["k"]["val"]);
   ApplyPerPixelFilter(canvas, data, function (r, g, b, a) {
-    return [r + k, g + k, b + k, a];
+    return [Clamp(r + k, 0, 255), Clamp(g + k, 0, 255), Clamp(b + k, 0, 255), a];
   });
 }
 

@@ -2,16 +2,62 @@ import { SendErrorMessage, GetOffsetFromElement, HideHistogramCanvas, ShowHistog
 import { filtersDict, FiltersInit } from "./filters.js";
 import { history, HistoryUpdate, HistoryAdd, HistoryLog } from "./history.js";
 
-let errorElement = document.getElementById("error-message");
+let errorElement;
 
 window.addEventListener("load", (event) => {
-  let symbols = document.getElementsByClassName("symbol-uni-text");
-  for (let i = 0; i < symbols.length; i++) {
-    symbols[i].style.fontSize = "1.25em";
-  }
-  document.getElementById("image-input").disabled = false;
-  FiltersInit();
-  HideHistogramCanvas();
+	errorElement = document.getElementById("error-message");
+	document.getElementById("image-input").addEventListener("change", function (e) {
+		// https://stackoverflow.com/questions/10906734/how-to-upload-image-into-html5-canvas
+		if (!e.target.files) {
+		  SendErrorMessage("Файл не найден.", true);
+		}
+		let reader = new FileReader();
+		reader.readAsDataURL(e.target.files[0]);
+		reader.onloadend = function (e) {
+		  let img = new Image();
+		  img.src = e.target.result;
+		  img.onload = () => {
+		    let canvases = [document.getElementById("original-img-canvas"), document.getElementById("edited-img-canvas")];
+		    for (let i = 0; i < 2; i++) {
+		      let ctx = canvases[i].getContext("2d");
+		      canvases[i].width = img.width;
+		      canvases[i].height = img.height;
+		      ctx.drawImage(img, 0, 0);
+		    }
+		    OnHistoryResetButtonClick();
+		    document.getElementById("reset-button").disabled = true;
+
+		    ResetOffset();
+		    ShowWhenImgUpload();
+		    OnSelectFilter();
+		    DrawOriginalHistogramCanvas();
+		  }
+		}
+	});
+
+	document.getElementById("histogram-button").onclick = () => {
+		// https://javascript.info/popup-windows
+		// or don't use popups??
+		//let popup = window.open("about:blank", "Гистограмма", "width=1000,height=500");
+		let canvas = document.getElementById("histograms-table");
+		if (canvas.style.display == "none") {
+		  ShowHistogramCanvas();
+		}
+		else {
+		  HideHistogramCanvas();
+		}
+	};
+
+	document.getElementById("logo").onclick = () => {
+		document.getElementById("logo").style.display = "none";
+	}
+		let symbols = document.getElementsByClassName("symbol-uni-text");
+		for (let i = 0; i < symbols.length; i++) {
+		  symbols[i].style.fontSize = "1.25em";
+		}
+		document.getElementById("image-input").disabled = false;
+		FiltersInit();
+		HideHistogramCanvas();
 });
 
 function ResetOffset() {
@@ -177,48 +223,3 @@ function OnApplyFilterButtonClick() {
   filtersDict[filterOption]["func"](canvas, ctx.getImageData(x, y, w, h), filtersDict[filterOption]["args"]);
 }
 
-document.getElementById("image-input").addEventListener("change", function (e) {
-  // https://stackoverflow.com/questions/10906734/how-to-upload-image-into-html5-canvas
-  if (!e.target.files) {
-    SendErrorMessage("Файл не найден.", true);
-  }
-  let reader = new FileReader();
-  reader.readAsDataURL(e.target.files[0]);
-  reader.onloadend = function (e) {
-    let img = new Image();
-    img.src = e.target.result;
-    img.onload = () => {
-      let canvases = [document.getElementById("original-img-canvas"), document.getElementById("edited-img-canvas")];
-      for (let i = 0; i < 2; i++) {
-        let ctx = canvases[i].getContext("2d");
-        canvases[i].width = img.width;
-        canvases[i].height = img.height;
-        ctx.drawImage(img, 0, 0);
-      }
-      OnHistoryResetButtonClick();
-      document.getElementById("reset-button").disabled = true;
-
-      ResetOffset();
-      ShowWhenImgUpload();
-      OnSelectFilter();
-      DrawOriginalHistogramCanvas();
-    }
-  }
-});
-
-document.getElementById("histogram-button").onclick = () => {
-  // https://javascript.info/popup-windows
-  // or don't use popups??
-  //let popup = window.open("about:blank", "Гистограмма", "width=1000,height=500");
-  let canvas = document.getElementById("histograms-table");
-  if (canvas.style.display == "none") {
-    ShowHistogramCanvas();
-  }
-  else {
-    HideHistogramCanvas();
-  }
-};
-
-document.getElementById("logo").onclick = () => {
-  document.getElementById("logo").style.display = "none";
-}

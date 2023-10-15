@@ -107,7 +107,7 @@ export function SetPixelImgDataByIndex(/*ImageData*/ data, /*uint*/ i, /*uint*/ 
 
 export function Clamp(value, min, max) {
   if (value <= min)
-    return value;
+    return min;
   if (value >= max)
     return max;
   return value;
